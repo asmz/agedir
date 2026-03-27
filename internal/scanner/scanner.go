@@ -14,8 +14,6 @@ var DefaultPatterns = []string{
 	"GoogleService-Info*.plist",
 	"*.pem",
 	"*.key",
-	".env",
-	".env.*",
 }
 
 // ScanResult holds the results of a scan operation.

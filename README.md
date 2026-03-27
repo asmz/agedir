@@ -4,7 +4,7 @@ A CLI tool to bulk-encrypt, decrypt, and place multiple secret files across a pr
 
 ## Overview
 
-Projects often contain multiple secret files scattered across directories — API keys, certificates, Firebase configs, `.env` files, and more. agedir manages them all through a single `agedir.yaml` configuration, letting you:
+Projects often contain multiple secret files scattered across directories — API keys, certificates, Firebase configs, and more. agedir manages them all through a single `agedir.yaml` configuration, letting you:
 
 - **Encrypt** plaintext files into a storage directory with one command
 - **Decrypt** and place them back to their original paths with one command
@@ -77,8 +77,6 @@ mapping:
     dest: android/app/google-services.json
   - src: GoogleService-Info.plist.age
     dest: ios/Runner/GoogleService-Info.plist
-  - src: .env.age
-    dest: .env
 ```
 
 ### 3. Encrypt
@@ -186,7 +184,6 @@ mapping:                   # required; one or more src/dest pairs
 | `google-services*.json` | Firebase Android config |
 | `GoogleService-Info*.plist` | Firebase iOS config |
 | `*.pem`, `*.key` | TLS certificates / private keys |
-| `.env`, `.env.*` | Environment variable files |
 
 ## Cross-Platform Builds
 

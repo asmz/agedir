@@ -23,9 +23,6 @@ func TestScan_DefaultPatterns(t *testing.T) {
 		"GoogleService-Info-Staging.plist",
 		"server.pem",
 		"private.key",
-		".env",
-		".env.local",
-		".env.production",
 	}
 
 	// files that should not be matched
@@ -142,7 +139,7 @@ func TestDefaultPatterns(t *testing.T) {
 		t.Error("DefaultPatterns is empty")
 	}
 
-	required := []string{"*.jks", "*.p12", "google-services*.json", "GoogleService-Info*.plist", "*.pem", "*.key", ".env", ".env.*"}
+	required := []string{"*.jks", "*.p12", "google-services*.json", "GoogleService-Info*.plist", "*.pem", "*.key"}
 	patternSet := make(map[string]bool)
 	for _, p := range patterns {
 		patternSet[p] = true
