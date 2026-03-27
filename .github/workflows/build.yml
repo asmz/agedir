@@ -1,0 +1,130 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests
+        run: go test ./...
+
+  cross-build:
+    name: Cross-build (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          EXT=""
+          if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
+          go build -ldflags "-s -w" -o dist/agedir-${{ matrix.goos }}-${{ matrix.goarch }}${EXT} .
+
+      - name: Verify binary exists
+        run: |
+          EXT=""
+          if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
+          ls -lh dist/agedir-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}
+
+  smoke-test:
+    name: Smoke test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+        run: go build -o agedir .
+
+      - name: Smoke test --help (exit code 0)
+        run: ./agedir --help
+
+      - name: Smoke test decrypt without config (exit code non-zero)
+        run: |
+          tmpdir=$(mktemp -d)
+          cp ./agedir "$tmpdir/agedir"
+          cd "$tmpdir"
+          ./agedir decrypt && { echo "ERROR: expected non-zero exit"; exit 1; } || echo "exit code non-zero as expected"
+
+  smoke-test-windows:
+    name: Smoke test (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+        run: go build -o agedir.exe .
+
+      - name: Smoke test --help (exit code 0)
+        run: .\agedir.exe --help
+
+      - name: Smoke test decrypt without config (exit code non-zero)
+        shell: pwsh
+        run: |
+          $tmpdir = New-TemporaryFile | ForEach-Object { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
+          Copy-Item .\agedir.exe "$tmpdir\agedir.exe"
+          Push-Location $tmpdir
+          try {
+            .\agedir.exe decrypt
+            Write-Error "ERROR: expected non-zero exit"
+            exit 1
+          } catch {
+            Write-Host "exit code non-zero as expected"
+          } finally {
+            Pop-Location
+          }
