@@ -3,6 +3,7 @@ package scanner_test
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -130,6 +131,70 @@ func TestScan_InvalidRoot(t *testing.T) {
 	_, err := s.Scan("/nonexistent/path/that/does/not/exist")
 	if err == nil {
 		t.Error("expected error for non-existent root, got nil")
+	}
+}
+
+func TestScan_SkipsFallbackExcludeDirs(t *testing.T) {
+	root := t.TempDir()
+
+	// .pem inside node_modules (fallback exclusion) must not be matched
+	vendorDir := filepath.Join(root, "node_modules", "some-lib")
+	if err := os.MkdirAll(vendorDir, 0o755); err != nil {
+		t.Fatalf("failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(vendorDir, "ca.pem"), []byte("cert"), 0o600); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	// .pem in a regular directory must still be matched
+	if err := os.WriteFile(filepath.Join(root, "server.pem"), []byte("cert"), 0o600); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	s := scanner.New()
+	result, err := s.Scan(root)
+	if err != nil {
+		t.Fatalf("Scan failed: %v", err)
+	}
+
+	if len(result.Matches) != 1 || result.Matches[0] != "server.pem" {
+		t.Errorf("unexpected matches: %v", result.Matches)
+	}
+}
+
+func TestScan_SkipsGitIgnoredDirs(t *testing.T) {
+	root := t.TempDir()
+
+	// skip if git is not available
+	if err := exec.Command("git", "init", root).Run(); err != nil {
+		t.Skip("git not available")
+	}
+
+	// vendor/bundle ignored via .gitignore
+	vendorDir := filepath.Join(root, "vendor", "bundle")
+	if err := os.MkdirAll(vendorDir, 0o755); err != nil {
+		t.Fatalf("failed to create directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(vendorDir, "ca.pem"), []byte("cert"), 0o600); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".gitignore"), []byte("vendor/\n"), 0o644); err != nil {
+		t.Fatalf("failed to create .gitignore: %v", err)
+	}
+
+	// .pem in a regular directory must still be matched
+	if err := os.WriteFile(filepath.Join(root, "server.pem"), []byte("cert"), 0o600); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	s := scanner.New()
+	result, err := s.Scan(root)
+	if err != nil {
+		t.Fatalf("Scan failed: %v", err)
+	}
+
+	if len(result.Matches) != 1 || result.Matches[0] != "server.pem" {
+		t.Errorf("unexpected matches: %v", result.Matches)
 	}
 }
 
