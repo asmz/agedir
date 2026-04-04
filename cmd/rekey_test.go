@@ -34,7 +34,7 @@ func TestRunRekey_SuccessfulRekey(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -68,11 +68,11 @@ func TestRunRekey_SuccessfulRekey(t *testing.T) {
 	}
 }
 
-func TestRunRekey_MissingDestIsSkipped(t *testing.T) {
+func TestRunRekey_MissingRawIsSkipped(t *testing.T) {
 	dir := t.TempDir()
 	kp := generateTestKeyPair(t)
 
-	// intentionally not creating the dest file
+	// intentionally not creating the raw file
 	storageDir := filepath.Join(dir, ".agedir", "secrets")
 	os.MkdirAll(storageDir, 0o755)
 
@@ -80,7 +80,7 @@ func TestRunRekey_MissingDestIsSkipped(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "missing.txt.age", Dest: filepath.Join(dir, "missing.txt")}},
+		Mapping:    []config.FileMapping{{Raw: filepath.Join(dir, "missing.txt"), Enc: "missing.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -90,7 +90,7 @@ func TestRunRekey_MissingDestIsSkipped(t *testing.T) {
 
 	err := runRekey(cmd, opts, config.New(), crypto.New(), fileops.New())
 	if err != nil {
-		t.Errorf("runRekey() returned unexpected error for missing dest: %v", err)
+		t.Errorf("runRekey() returned unexpected error for missing raw file: %v", err)
 	}
 
 	if !strings.Contains(errOut.String(), "warning:") {
@@ -118,7 +118,7 @@ func TestRunRekey_NewRecipientCanDecrypt(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kpOld.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)

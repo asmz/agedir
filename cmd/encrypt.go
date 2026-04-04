@@ -56,24 +56,24 @@ func runEncrypt(cmd *cobra.Command, opts encryptOpts, cfgLoader config.ConfigLoa
 	var failed, skipped, success int
 
 	for _, m := range cfg.Mapping {
-		destPath := filepath.FromSlash(m.Dest)
-		encPath := filepath.Join(cfg.StorageDir, m.Src)
+		rawPath := filepath.FromSlash(m.Raw)
+		encPath := filepath.Join(cfg.StorageDir, m.Enc)
 
-		srcFile, openErr := os.Open(destPath)
+		srcFile, openErr := os.Open(rawPath)
 		if openErr != nil {
 			if os.IsNotExist(openErr) {
-				fmt.Fprintf(cmd.ErrOrStderr(), "warning: plaintext file not found: %s\n", destPath)
+				fmt.Fprintf(cmd.ErrOrStderr(), "warning: raw file not found: %s\n", rawPath)
 				skipped++
 				continue
 			}
-			fmt.Fprintf(cmd.ErrOrStderr(), "error: cannot open %s: %v\n", destPath, openErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "error: cannot open %s: %v\n", rawPath, openErr)
 			failed++
 			continue
 		}
 
 		if opts.dryRun {
 			srcFile.Close()
-			fmt.Fprintf(cmd.OutOrStdout(), "[dry-run] %s -> %s\n", destPath, encPath)
+			fmt.Fprintf(cmd.OutOrStdout(), "[dry-run] %s -> %s\n", rawPath, encPath)
 			success++
 			continue
 		}
@@ -82,7 +82,7 @@ func runEncrypt(cmd *cobra.Command, opts encryptOpts, cfgLoader config.ConfigLoa
 		encErr := cryptoSvc.Encrypt(srcFile, &encBuf, cfg.Recipients)
 		srcFile.Close()
 		if encErr != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to encrypt %s: %v\n", destPath, encErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to encrypt %s: %v\n", rawPath, encErr)
 			failed++
 			continue
 		}

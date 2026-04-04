@@ -31,7 +31,7 @@ func TestIntegration_EncryptDecryptRoundtrip_Pubkey(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -87,7 +87,7 @@ func TestIntegration_EncryptDecryptRoundtrip_Passphrase(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{"passphrase-mode"},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -131,8 +131,8 @@ func TestIntegration_EncryptDecryptRoundtrip_MultiMapping(t *testing.T) {
 		destPath := filepath.Join(dir, e.name)
 		os.WriteFile(destPath, e.content, 0o600)
 		mappings = append(mappings, config.FileMapping{
-			Src:  e.name + ".age",
-			Dest: destPath,
+			Enc:  e.name + ".age",
+			Raw: destPath,
 		})
 	}
 
@@ -193,7 +193,7 @@ func TestIntegration_EncryptDecryptRoundtrip_MultiRecipient(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp1.pubkey, kp2.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -250,12 +250,12 @@ func TestIntegration_Rekey_OldKeyCannotDecryptAfterRotation(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kpOld.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
 
-	// initial rekey (old key encrypts dest)
+	// initial rekey (old key encrypts raw file)
 	rekeyCmd, _, _ := newTestCmd()
 	if err := runRekey(rekeyCmd, rekeyOpts{configPath: cfgPath}, config.New(), crypto.New(), fileops.New()); err != nil {
 		t.Fatalf("initial rekey error: %v", err)
@@ -345,7 +345,7 @@ func TestIntegration_Init_ExistingConfigNotOverwrittenOnNo(t *testing.T) {
 	dir := t.TempDir()
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
-	originalContent := []byte("version: \"1\"\nrecipients:\n  - age1original\nmapping:\n  - src: original.age\n    dest: original.txt\n")
+	originalContent := []byte("version: \"1\"\nrecipients:\n  - age1original\nmapping:\n  - enc: original.age\n    raw: original.txt\n")
 	os.WriteFile(cfgPath, originalContent, 0o644)
 
 	cmd, out, _ := newTestCmd()

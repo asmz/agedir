@@ -77,8 +77,8 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 	}
 	for _, match := range result.Matches {
 		cfg.Mapping = append(cfg.Mapping, config.FileMapping{
-			Src:  filepath.Base(match) + ".age",
-			Dest: match,
+			Enc: filepath.Base(match) + ".age",
+			Raw: match,
 		})
 	}
 
@@ -87,14 +87,14 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 		return fmt.Errorf("failed to generate agedir.yaml: %w", err)
 	}
 
-	// append dest paths to .gitignore
+	// append raw paths to .gitignore
 	gitignorePath := filepath.Join(filepath.Dir(configPath), ".gitignore")
-	var destPaths []string
+	var rawPaths []string
 	for _, m := range cfg.Mapping {
-		destPaths = append(destPaths, m.Dest)
+		rawPaths = append(rawPaths, m.Raw)
 	}
-	if len(destPaths) > 0 {
-		if err := cfgLoader.AppendGitignore(gitignorePath, destPaths); err != nil {
+	if len(rawPaths) > 0 {
+		if err := cfgLoader.AppendGitignore(gitignorePath, rawPaths); err != nil {
 			fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to update .gitignore: %v\n", err)
 		}
 	}

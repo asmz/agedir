@@ -29,10 +29,10 @@ type Config struct {
 	Mapping    []FileMapping `yaml:"mapping"`
 }
 
-// FileMapping represents a 1:1 mapping between an encrypted file (Src) and a plaintext file (Dest).
+// FileMapping represents a 1:1 mapping between a raw file (Raw) and its encrypted counterpart (Enc).
 type FileMapping struct {
-	Src  string `yaml:"src"`
-	Dest string `yaml:"dest"`
+	Raw string `yaml:"raw"`
+	Enc string `yaml:"enc"`
 }
 
 // ConfigLoader provides load, generate, and gitignore management for config files.
@@ -97,16 +97,16 @@ func validate(cfg *Config) error {
 
 	seen := make(map[string]bool, len(cfg.Mapping))
 	for i, m := range cfg.Mapping {
-		if m.Src == "" {
-			return fmt.Errorf("mapping[%d].src is empty", i)
+		if m.Enc == "" {
+			return fmt.Errorf("mapping[%d].enc is empty", i)
 		}
-		if m.Dest == "" {
-			return fmt.Errorf("mapping[%d].dest is empty", i)
+		if m.Raw == "" {
+			return fmt.Errorf("mapping[%d].raw is empty", i)
 		}
-		if seen[m.Dest] {
-			return fmt.Errorf("duplicate dest in mapping: %q", m.Dest)
+		if seen[m.Raw] {
+			return fmt.Errorf("duplicate raw in mapping: %q", m.Raw)
 		}
-		seen[m.Dest] = true
+		seen[m.Raw] = true
 	}
 
 	return nil

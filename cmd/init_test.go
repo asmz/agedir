@@ -90,7 +90,7 @@ func TestRunInit_ExistingConfigCancelledByNo(t *testing.T) {
 	dir := t.TempDir()
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
-	originalContent := []byte("version: \"1\"\nrecipients:\n  - age1xxx\nmapping:\n  - src: old.age\n    dest: old.txt\n")
+	originalContent := []byte("version: \"1\"\nrecipients:\n  - age1xxx\nmapping:\n  - enc: old.age\n    raw: old.txt\n")
 	os.WriteFile(cfgPath, originalContent, 0o644)
 
 	cmd, out, _ := newTestCmd()
@@ -115,7 +115,7 @@ func TestRunInit_ExistingConfigOverwrittenByYes(t *testing.T) {
 	dir := t.TempDir()
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
-	os.WriteFile(cfgPath, []byte("version: \"1\"\nrecipients:\n  - old_key_xxx\nmapping:\n  - src: old.age\n    dest: old.txt\n"), 0o644)
+	os.WriteFile(cfgPath, []byte("version: \"1\"\nrecipients:\n  - old_key_xxx\nmapping:\n  - enc: old.age\n    raw: old.txt\n"), 0o644)
 
 	// create a new file that should be picked up by the scanner
 	os.WriteFile(filepath.Join(dir, "new.key"), []byte("new key"), 0o644)
