@@ -169,7 +169,8 @@ mapping:                   # required; one or more raw/enc pairs
 
 - **Raw files** (`raw` paths) are added to `.gitignore` by `agedir init` — never commit them.
 - **Encrypted files** (`storage_dir`) are safe to commit.
-- Passphrases are never passed as command-line arguments (avoids exposure via `ps`).- Encrypted files are written atomically (temp file + rename) to prevent corruption on interruption.
+- Passphrases are never passed as command-line arguments (avoids exposure via `ps`).
+- Encrypted files are written atomically (temp file + rename) to prevent corruption on interruption.
 
 ## Default Scan Patterns
 
