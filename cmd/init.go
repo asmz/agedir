@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -87,11 +88,13 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 		return fmt.Errorf("failed to generate agedir.yaml: %w", err)
 	}
 
-	// append raw paths to .gitignore
+	// append raw paths to .gitignore, skipping files already covered by git's ignore rules
 	gitignorePath := filepath.Join(filepath.Dir(configPath), ".gitignore")
 	var rawPaths []string
 	for _, m := range cfg.Mapping {
-		rawPaths = append(rawPaths, m.Raw)
+		if !isGitIgnored(root, m.Raw) {
+			rawPaths = append(rawPaths, m.Raw)
+		}
 	}
 	if len(rawPaths) > 0 {
 		if err := cfgLoader.AppendGitignore(gitignorePath, rawPaths); err != nil {
@@ -105,4 +108,12 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 	}
 
 	return nil
+}
+
+// isGitIgnored reports whether path (relative to root) is already covered by git's ignore rules.
+// Returns false if git is unavailable or root is not a git repository.
+func isGitIgnored(root, path string) bool {
+	cmd := exec.Command("git", "check-ignore", "-q", path)
+	cmd.Dir = root
+	return cmd.Run() == nil
 }

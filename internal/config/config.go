@@ -159,6 +159,9 @@ func (l *loader) AppendGitignore(gitignorePath string, entries []string) error {
 	}
 	defer f.Close()
 
+	if _, err := fmt.Fprintln(f, "\n# Added by agedir"); err != nil {
+		return fmt.Errorf("failed to append to .gitignore: %w", err)
+	}
 	for _, e := range toAppend {
 		if _, err := fmt.Fprintln(f, e); err != nil {
 			return fmt.Errorf("failed to append to .gitignore: %w", err)
