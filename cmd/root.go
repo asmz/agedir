@@ -14,8 +14,9 @@ scattered across a project based on mappings in agedir.yaml,
 using age encryption as the backend.`,
 }
 
-// Execute runs the root command.
-func Execute() {
+// Execute runs the root command with the given version string.
+func Execute(version string) {
+	rootCmd.Version = version
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
