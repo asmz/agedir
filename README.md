@@ -185,6 +185,17 @@ mapping:                   # required; one or more raw/enc pairs
 | `GoogleService-Info*.plist` | Firebase iOS config |
 | `*.pem`, `*.key` | TLS certificates / private keys |
 
+### Scan Exclusion Rules
+
+Directories are excluded from scanning at the **directory level**, not the file level:
+
+- **git-ignored directories**: If a directory is ignored by git (via any `.gitignore` in the repository), it is skipped entirely along with all its contents. This prevents third-party package directories such as `vendor/`, `node_modules/`, and `Pods/` from polluting the results.
+- **Built-in fallback list**: When git is unavailable, the following directories are excluded by default: `node_modules/`, `.bundle/`, `Pods/`, `.dart_tool/`.
+
+> **Note:** Individual files that are git-ignored are still detected as long as their parent directory is not git-ignored. This is intentional — raw secret files are typically gitignored at the file level, and `agedir init` is designed to find and manage exactly those files.
+>
+> If you store secrets inside a git-ignored directory (e.g., a `secrets/` directory that is itself gitignored), those files will not be detected automatically. Add them to `agedir.yaml` manually.
+
 ## Cross-Platform Builds
 
 ```sh

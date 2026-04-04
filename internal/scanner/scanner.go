@@ -44,7 +44,15 @@ func New() Scanner {
 }
 
 // Scan recursively walks root and lists files matching DefaultPatterns.
-// Directories ignored by git (or in the fallback exclusion list) are skipped.
+//
+// Exclusion is applied at the directory level: if a directory is ignored by git,
+// it is skipped entirely along with all its contents. This prevents third-party
+// package directories (e.g. vendor/, node_modules/) from producing false positives.
+// Individual gitignored files within non-ignored directories are still detected —
+// secret files are typically gitignored at the file level, and Scan is designed
+// to find exactly those files.
+//
+// When git is unavailable, fallbackExcludeDirs is used instead.
 // Results are returned as relative paths from root.
 func (s *scanner) Scan(root string) (ScanResult, error) {
 	var matches []string
