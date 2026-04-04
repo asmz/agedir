@@ -150,7 +150,7 @@ func resolveIdentities(opts IdentityOpts) ([]age.Identity, error) {
 	}
 
 	if opts.PassphraseMode {
-		passphrase, err := resolvePassphrase()
+		passphrase, err := ResolvePassphrase()
 		if err != nil {
 			return nil, err
 		}
@@ -183,8 +183,8 @@ func loadIdentityFile(path string) ([]age.Identity, error) {
 	return identities, nil
 }
 
-// resolvePassphrase obtains a passphrase from AGEDIR_PASSPHRASE env or a terminal prompt (no echo).
-func resolvePassphrase() (string, error) {
+// ResolvePassphrase obtains a passphrase from AGEDIR_PASSPHRASE env or a terminal prompt (no echo).
+func ResolvePassphrase() (string, error) {
 	if passphrase := os.Getenv("AGEDIR_PASSPHRASE"); passphrase != "" {
 		return passphrase, nil
 	}
