@@ -78,7 +78,7 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 	}
 	for _, match := range result.Matches {
 		cfg.Mapping = append(cfg.Mapping, config.FileMapping{
-			Enc: filepath.Base(match) + ".age",
+			Enc: filepath.ToSlash(match) + ".age",
 			Raw: match,
 		})
 	}

@@ -168,6 +168,38 @@ func TestRunInit_AlreadyGitIgnoredFileNotAddedToRootGitignore(t *testing.T) {
 	}
 }
 
+func TestRunInit_SameFileNameInDifferentDirsGetDistinctEncPaths(t *testing.T) {
+	dir := t.TempDir()
+
+	// two files with the same basename in different subdirectories
+	subA := filepath.Join(dir, "android", "app")
+	subI := filepath.Join(dir, "ios", "Runner")
+	os.MkdirAll(subA, 0o755)
+	os.MkdirAll(subI, 0o755)
+	os.WriteFile(filepath.Join(subA, "google-services.json"), []byte("android"), 0o644)
+	os.WriteFile(filepath.Join(subI, "google-services.json"), []byte("ios"), 0o644)
+
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	cmd, _, _ := newTestCmd()
+	if err := runInit(cmd, initOpts{configPath: cfgPath, root: dir}, config.New(), scanner.New()); err != nil {
+		t.Fatalf("runInit() returned unexpected error: %v", err)
+	}
+
+	content, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("cannot read agedir.yaml: %v", err)
+	}
+	cfgStr := string(content)
+
+	// both files must appear with their full relative path as enc, not just basename
+	if !strings.Contains(cfgStr, "android/app/google-services.json.age") {
+		t.Errorf("expected enc path android/app/google-services.json.age not found in config:\n%s", cfgStr)
+	}
+	if !strings.Contains(cfgStr, "ios/Runner/google-services.json.age") {
+		t.Errorf("expected enc path ios/Runner/google-services.json.age not found in config:\n%s", cfgStr)
+	}
+}
+
 func TestRunInit_NoSensitiveFilesGeneratesEmptyMapping(t *testing.T) {
 	dir := t.TempDir()
 
