@@ -6,7 +6,7 @@ A CLI tool to bulk-encrypt, decrypt, and place multiple secret files across a pr
 
 Projects often contain multiple secret files scattered across directories — API keys, certificates, Firebase configs, and more. agedir manages them all through a single `agedir.yaml` configuration, letting you:
 
-- **Encrypt** plaintext files into a storage directory with one command
+- **Encrypt** raw files into a storage directory with one command
 - **Decrypt** and place them back to their original paths with one command
 - **Rekey** all encrypted files when team members join or leave
 - **Init** a project by auto-detecting common secret file patterns
@@ -85,7 +85,7 @@ mapping:
 agedir encrypt
 ```
 
-Reads each `dest` file and writes the age-encrypted output to `storage_dir/src`. Commit the `storage_dir` contents to your repository.
+Reads each `raw` file and writes the age-encrypted output to `storage_dir/enc`. Commit the `storage_dir` contents to your repository.
 
 ### 4. Decrypt
 
@@ -93,7 +93,7 @@ Reads each `dest` file and writes the age-encrypted output to `storage_dir/src`.
 agedir decrypt -i ~/.age/key.txt
 ```
 
-Decrypts each encrypted file and places it at the configured `dest` path. Run this when setting up a new environment.
+Decrypts each encrypted file and places it at the configured `raw` path. Run this when setting up a new environment.
 
 ## Commands
 
@@ -109,7 +109,7 @@ Prompts for confirmation before overwriting an existing config.
 
 ### `agedir encrypt`
 
-Encrypt all plaintext files according to the config.
+Encrypt all raw files according to the config.
 
 ```sh
 agedir encrypt [--config agedir.yaml] [--dry-run]
@@ -167,7 +167,7 @@ mapping:                   # required; one or more raw/enc pairs
 
 ## Security Notes
 
-- **Plaintext files** (`dest` paths) are added to `.gitignore` by `agedir init` — never commit them.
+- **Raw files** (`raw` paths) are added to `.gitignore` by `agedir init` — never commit them.
 - **Encrypted files** (`storage_dir`) are safe to commit.
 - Passphrases are never passed as command-line arguments (avoids exposure via `ps`).
 - Private key bytes are zeroed from memory after use.
