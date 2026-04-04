@@ -68,8 +68,8 @@ func runDecrypt(cmd *cobra.Command, opts decryptOpts, cfgLoader config.ConfigLoa
 	var failed, skipped, success int
 
 	for _, m := range cfg.Mapping {
-		encPath := filepath.Join(cfg.StorageDir, m.Src)
-		destPath := filepath.FromSlash(m.Dest)
+		encPath := filepath.Join(cfg.StorageDir, m.Enc)
+		rawPath := filepath.FromSlash(m.Raw)
 
 		f, openErr := os.Open(encPath)
 		if openErr != nil {
@@ -93,9 +93,9 @@ func runDecrypt(cmd *cobra.Command, opts decryptOpts, cfgLoader config.ConfigLoa
 		}
 
 		placeOpts := fileops.PlaceOptions{DryRun: opts.dryRun, Verify: opts.verify}
-		result, placeErr := fileOps.Place(&buf, destPath, placeOpts)
+		result, placeErr := fileOps.Place(&buf, rawPath, placeOpts)
 		if placeErr != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to place %s: %v\n", destPath, placeErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to place %s: %v\n", rawPath, placeErr)
 			failed++
 			continue
 		}

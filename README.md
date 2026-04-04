@@ -73,10 +73,10 @@ recipients:
   - age1yyyy...yyyy  # bob
 storage_dir: .agedir/secrets
 mapping:
-  - src: google-services.json.age
-    dest: android/app/google-services.json
-  - src: GoogleService-Info.plist.age
-    dest: ios/Runner/GoogleService-Info.plist
+  - raw: android/app/google-services.json
+    enc: google-services.json.age
+  - raw: ios/Runner/GoogleService-Info.plist
+    enc: GoogleService-Info.plist.age
 ```
 
 ### 3. Encrypt
@@ -151,9 +151,9 @@ version: "1"               # required
 recipients:                # required; one or more age public keys
   - age1...
 storage_dir: .agedir/secrets  # optional; default: .agedir/secrets
-mapping:                   # required; one or more src/dest pairs
-  - src: secret.txt.age    # path relative to storage_dir
-    dest: path/to/secret.txt  # path relative to project root
+mapping:                   # required; one or more raw/enc pairs
+  - raw: path/to/secret.txt  # path relative to project root (original file)
+    enc: secret.txt.age      # path relative to storage_dir (encrypted file)
 ```
 
 ## Identity Resolution

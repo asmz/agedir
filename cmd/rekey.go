@@ -33,8 +33,8 @@ type rekeyOpts struct {
 }
 
 // runRekey implements the business logic for the rekey command.
-// It reads plaintext files from dest paths and re-encrypts them for all current recipients,
-// saving the results to storage_dir/src.
+// It reads raw files from raw paths and re-encrypts them for all current recipients,
+// saving the results to storage_dir/enc.
 func runRekey(cmd *cobra.Command, opts rekeyOpts, cfgLoader config.ConfigLoader, cryptoSvc crypto.CryptoService, fileOps fileops.FileOps) error {
 	cfg, err := cfgLoader.Load(opts.configPath)
 	if err != nil {
@@ -50,17 +50,17 @@ func runRekey(cmd *cobra.Command, opts rekeyOpts, cfgLoader config.ConfigLoader,
 	var failed, skipped, success int
 
 	for _, m := range cfg.Mapping {
-		destPath := filepath.FromSlash(m.Dest)
-		encPath := filepath.Join(cfg.StorageDir, m.Src)
+		rawPath := filepath.FromSlash(m.Raw)
+		encPath := filepath.Join(cfg.StorageDir, m.Enc)
 
-		srcFile, openErr := os.Open(destPath)
+		srcFile, openErr := os.Open(rawPath)
 		if openErr != nil {
 			if os.IsNotExist(openErr) {
-				fmt.Fprintf(cmd.ErrOrStderr(), "warning: plaintext file not found: %s\n", destPath)
+				fmt.Fprintf(cmd.ErrOrStderr(), "warning: raw file not found: %s\n", rawPath)
 				skipped++
 				continue
 			}
-			fmt.Fprintf(cmd.ErrOrStderr(), "error: cannot open %s: %v\n", destPath, openErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "error: cannot open %s: %v\n", rawPath, openErr)
 			failed++
 			continue
 		}
@@ -69,7 +69,7 @@ func runRekey(cmd *cobra.Command, opts rekeyOpts, cfgLoader config.ConfigLoader,
 		encErr := cryptoSvc.Encrypt(srcFile, &encBuf, cfg.Recipients)
 		srcFile.Close()
 		if encErr != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to re-encrypt %s: %v\n", destPath, encErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to re-encrypt %s: %v\n", rawPath, encErr)
 			failed++
 			continue
 		}

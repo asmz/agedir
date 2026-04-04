@@ -42,7 +42,7 @@ func TestRunDecrypt_SuccessfulDecryption(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -79,7 +79,7 @@ func TestRunDecrypt_MissingEncryptedFileIsSkipped(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "missing.txt.age", Dest: filepath.Join(dir, "missing.txt")}},
+		Mapping:    []config.FileMapping{{Raw: filepath.Join(dir, "missing.txt"), Enc: "missing.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -116,7 +116,7 @@ func TestRunDecrypt_WrongKeyReturnsError(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp1.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: filepath.Join(dir, "secret.txt")}},
+		Mapping:    []config.FileMapping{{Raw: filepath.Join(dir, "secret.txt"), Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)
@@ -153,7 +153,7 @@ func TestRunDecrypt_DryRunDoesNotWriteFiles(t *testing.T) {
 		Version:    "1",
 		Recipients: []string{kp.pubkey},
 		StorageDir: storageDir,
-		Mapping:    []config.FileMapping{{Src: "secret.txt.age", Dest: destPath}},
+		Mapping:    []config.FileMapping{{Raw: destPath, Enc: "secret.txt.age"}},
 	}
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	writeAgedir(t, cfgPath, cfg)

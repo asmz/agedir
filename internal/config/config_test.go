@@ -39,8 +39,8 @@ recipients:
   - age1abc123
 storage_dir: ".agedir/secrets"
 mapping:
-  - src: "secret.json.age"
-    dest: "android/app/secret.json"
+  - enc: "secret.json.age"
+    raw: "android/app/secret.json"
 `
 
 func TestLoad_ValidConfig(t *testing.T) {
@@ -65,7 +65,7 @@ func TestLoad_ValidConfig(t *testing.T) {
 	if len(cfg.Mapping) != 1 {
 		t.Fatalf("Mapping len = %d, want 1", len(cfg.Mapping))
 	}
-	if cfg.Mapping[0].Src != "secret.json.age" || cfg.Mapping[0].Dest != "android/app/secret.json" {
+	if cfg.Mapping[0].Enc != "secret.json.age" || cfg.Mapping[0].Raw != "android/app/secret.json" {
 		t.Errorf("Mapping[0] = %+v", cfg.Mapping[0])
 	}
 }
@@ -77,8 +77,8 @@ version: "1"
 recipients:
   - age1abc123
 mapping:
-  - src: "a.age"
-    dest: "a.txt"
+  - enc: "a.age"
+    raw: "a.txt"
 `
 	path := writeFile(t, dir, "agedir.yaml", yaml)
 
@@ -112,8 +112,8 @@ func TestLoad_NoRecipients(t *testing.T) {
 version: "1"
 recipients: []
 mapping:
-  - src: "a.age"
-    dest: "a.txt"
+  - enc: "a.age"
+    raw: "a.txt"
 `
 	path := writeFile(t, dir, "agedir.yaml", yaml)
 	loader := config.New()
@@ -139,59 +139,59 @@ mapping: []
 	}
 }
 
-func TestLoad_EmptySrcInMapping(t *testing.T) {
+func TestLoad_EmptyEncInMapping(t *testing.T) {
 	dir := tempDir(t)
 	yaml := `
 version: "1"
 recipients:
   - age1abc123
 mapping:
-  - src: ""
-    dest: "a.txt"
+  - enc: ""
+    raw: "a.txt"
 `
 	path := writeFile(t, dir, "agedir.yaml", yaml)
 	loader := config.New()
 	_, err := loader.Load(path)
 	if err == nil {
-		t.Fatal("expected error for empty src, got nil")
+		t.Fatal("expected error for empty enc, got nil")
 	}
 }
 
-func TestLoad_EmptyDestInMapping(t *testing.T) {
+func TestLoad_EmptyRawInMapping(t *testing.T) {
 	dir := tempDir(t)
 	yaml := `
 version: "1"
 recipients:
   - age1abc123
 mapping:
-  - src: "a.age"
-    dest: ""
+  - enc: "a.age"
+    raw: ""
 `
 	path := writeFile(t, dir, "agedir.yaml", yaml)
 	loader := config.New()
 	_, err := loader.Load(path)
 	if err == nil {
-		t.Fatal("expected error for empty dest, got nil")
+		t.Fatal("expected error for empty raw, got nil")
 	}
 }
 
-func TestLoad_DuplicateDest(t *testing.T) {
+func TestLoad_DuplicateRaw(t *testing.T) {
 	dir := tempDir(t)
 	yaml := `
 version: "1"
 recipients:
   - age1abc123
 mapping:
-  - src: "a.age"
-    dest: "shared.txt"
-  - src: "b.age"
-    dest: "shared.txt"
+  - enc: "a.age"
+    raw: "shared.txt"
+  - enc: "b.age"
+    raw: "shared.txt"
 `
 	path := writeFile(t, dir, "agedir.yaml", yaml)
 	loader := config.New()
 	_, err := loader.Load(path)
 	if err == nil {
-		t.Fatal("expected error for duplicate dest, got nil")
+		t.Fatal("expected error for duplicate raw, got nil")
 	}
 }
 
@@ -206,7 +206,7 @@ func TestGenerate_WritesFile(t *testing.T) {
 		Recipients: []string{"age1abc123"},
 		StorageDir: ".agedir/secrets",
 		Mapping: []config.FileMapping{
-			{Src: "secret.age", Dest: "secret.txt"},
+			{Raw: "secret.txt", Enc: "secret.age"},
 		},
 	}
 
