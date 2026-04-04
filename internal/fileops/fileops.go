@@ -43,7 +43,7 @@ func New() FileOps {
 
 // EnsureDir creates the directory at path using os.MkdirAll.
 func (s *service) EnsureDir(path string) error {
-	if err := os.MkdirAll(path, 0o755); err != nil {
+	if err := os.MkdirAll(path, 0o700); err != nil {
 		return fmt.Errorf("failed to create directory %q: %w", path, err)
 	}
 	return nil
