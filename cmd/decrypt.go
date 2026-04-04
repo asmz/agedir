@@ -59,9 +59,21 @@ func runDecrypt(cmd *cobra.Command, opts decryptOpts, cfgLoader config.ConfigLoa
 		return err
 	}
 
+	// resolve passphrase once before processing (passphrase mode only)
+	var passphrase string
+	if opts.passphraseMode {
+		var err error
+		passphrase, err = crypto.ResolvePassphrase()
+		if err != nil {
+			return err
+		}
+		defer clear([]byte(passphrase))
+	}
+
 	identityOpts := crypto.IdentityOpts{
 		IdentityFile:   opts.identityFile,
 		PassphraseMode: opts.passphraseMode,
+		Passphrase:     passphrase,
 	}
 
 	total := len(cfg.Mapping)

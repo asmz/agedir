@@ -11,10 +11,11 @@ import (
 )
 
 // IdentityOpts holds options for identity resolution during decryption.
-// Priority: IdentityFile > AGEDIR_IDENTITY env > AGEDIR_PASSPHRASE env > terminal prompt (PassphraseMode=true)
+// Priority: IdentityFile > AGEDIR_IDENTITY env > Passphrase (pre-resolved) > AGEDIR_PASSPHRASE env > terminal prompt (PassphraseMode=true)
 type IdentityOpts struct {
 	IdentityFile   string // --identity flag value; if empty, AGEDIR_IDENTITY env or PassphraseMode is used
-	PassphraseMode bool   // -p flag; if true, passphrase is obtained from AGEDIR_PASSPHRASE env or terminal prompt
+	PassphraseMode bool   // -p flag; if true, passphrase is obtained from Passphrase, AGEDIR_PASSPHRASE env or terminal prompt
+	Passphrase     string // pre-resolved passphrase; if set, skips env/prompt resolution
 }
 
 // CryptoService is the interface for age encryption and decryption.
@@ -150,9 +151,13 @@ func resolveIdentities(opts IdentityOpts) ([]age.Identity, error) {
 	}
 
 	if opts.PassphraseMode {
-		passphrase, err := ResolvePassphrase()
-		if err != nil {
-			return nil, err
+		passphrase := opts.Passphrase
+		if passphrase == "" {
+			var err error
+			passphrase, err = ResolvePassphrase()
+			if err != nil {
+				return nil, err
+			}
 		}
 		passphraseBytes := []byte(passphrase)
 		defer clear(passphraseBytes)
