@@ -13,18 +13,20 @@ import (
 )
 
 var (
-	encryptConfig string
-	encryptDryRun bool
+	encryptConfig     string
+	encryptDryRun     bool
+	encryptPassphrase bool
 )
 
 var encryptCmd = &cobra.Command{
 	Use:          "encrypt",
-	Short:        "Encrypt all plaintext files according to the config",
+	Short:        "Encrypt all raw files according to the config",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		opts := encryptOpts{
-			configPath: encryptConfig,
-			dryRun:     encryptDryRun,
+			configPath:     encryptConfig,
+			dryRun:         encryptDryRun,
+			passphraseMode: encryptPassphrase,
 		}
 		return runEncrypt(cmd, opts, config.New(), crypto.New(), fileops.New())
 	},
@@ -33,11 +35,13 @@ var encryptCmd = &cobra.Command{
 func init() {
 	encryptCmd.Flags().StringVar(&encryptConfig, "config", "", "path to agedir.yaml (default: current directory)")
 	encryptCmd.Flags().BoolVar(&encryptDryRun, "dry-run", false, "print files to be processed without performing actual operations")
+	encryptCmd.Flags().BoolVarP(&encryptPassphrase, "passphrase", "p", false, "encrypt using passphrase mode")
 }
 
 type encryptOpts struct {
-	configPath string
-	dryRun     bool
+	configPath     string
+	dryRun         bool
+	passphraseMode bool
 }
 
 // runEncrypt implements the business logic for the encrypt command.
@@ -47,9 +51,19 @@ func runEncrypt(cmd *cobra.Command, opts encryptOpts, cfgLoader config.ConfigLoa
 		return err
 	}
 
-	// validate all public keys before processing
-	if err := crypto.ValidateRecipients(cfg.Recipients); err != nil {
-		return err
+	// resolve passphrase once before processing (passphrase mode only)
+	var passphrase string
+	if opts.passphraseMode {
+		passphrase, err = crypto.ResolvePassphrase()
+		if err != nil {
+			return err
+		}
+		defer clear([]byte(passphrase))
+	} else {
+		// validate all public keys before processing
+		if err := crypto.ValidateRecipients(cfg.Recipients); err != nil {
+			return err
+		}
 	}
 
 	total := len(cfg.Mapping)
@@ -79,7 +93,12 @@ func runEncrypt(cmd *cobra.Command, opts encryptOpts, cfgLoader config.ConfigLoa
 		}
 
 		var encBuf bytes.Buffer
-		encErr := cryptoSvc.Encrypt(srcFile, &encBuf, cfg.Recipients)
+		var encErr error
+		if opts.passphraseMode {
+			encErr = cryptoSvc.EncryptWithPassphrase(srcFile, &encBuf, passphrase)
+		} else {
+			encErr = cryptoSvc.Encrypt(srcFile, &encBuf, cfg.Recipients)
+		}
 		srcFile.Close()
 		if encErr != nil {
 			fmt.Fprintf(cmd.ErrOrStderr(), "error: failed to encrypt %s: %v\n", rawPath, encErr)

@@ -131,6 +131,58 @@ func TestRunEncrypt_InvalidRecipientFailsFast(t *testing.T) {
 	}
 }
 
+func TestRunEncrypt_PassphraseMode(t *testing.T) {
+	dir := t.TempDir()
+
+	const passphrase = "test-passphrase-encrypt"
+	content := []byte("passphrase encryption test")
+
+	rawPath := filepath.Join(dir, "secret.txt")
+	os.WriteFile(rawPath, content, 0o600)
+
+	storageDir := filepath.Join(dir, ".agedir", "secrets")
+	os.MkdirAll(storageDir, 0o755)
+
+	cfg := &config.Config{
+		Version:    "1",
+		Recipients: []string{"passphrase-mode"},
+		StorageDir: storageDir,
+		Mapping:    []config.FileMapping{{Raw: rawPath, Enc: "secret.txt.age"}},
+	}
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	writeAgedir(t, cfgPath, cfg)
+
+	t.Setenv("AGEDIR_PASSPHRASE", passphrase)
+
+	cmd, out, _ := newTestCmd()
+	opts := encryptOpts{configPath: cfgPath, passphraseMode: true}
+
+	if err := runEncrypt(cmd, opts, config.New(), crypto.New(), fileops.New()); err != nil {
+		t.Fatalf("runEncrypt() passphrase mode error: %v", err)
+	}
+
+	if !strings.Contains(out.String(), "succeeded=1") {
+		t.Errorf("summary does not contain succeeded count: %q", out.String())
+	}
+
+	// verify the encrypted file can be decrypted with the same passphrase
+	encPath := filepath.Join(storageDir, "secret.txt.age")
+	encData, err := os.ReadFile(encPath)
+	if err != nil {
+		t.Fatalf("encrypted file not found: %v", err)
+	}
+
+	svc := crypto.New()
+	var decBuf bytes.Buffer
+	decErr := svc.Decrypt(bytes.NewReader(encData), &decBuf, crypto.IdentityOpts{PassphraseMode: true})
+	if decErr != nil {
+		t.Fatalf("failed to decrypt passphrase-encrypted file: %v", decErr)
+	}
+	if decBuf.String() != string(content) {
+		t.Errorf("content mismatch: got %q, want %q", decBuf.String(), string(content))
+	}
+}
+
 func TestRunEncrypt_DryRunDoesNotWriteFiles(t *testing.T) {
 	dir := t.TempDir()
 	kp := generateTestKeyPair(t)
