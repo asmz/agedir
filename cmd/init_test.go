@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -131,6 +132,39 @@ func TestRunInit_ExistingConfigOverwrittenByYes(t *testing.T) {
 	newContent, _ := os.ReadFile(cfgPath)
 	if strings.Contains(string(newContent), "old_key_xxx") {
 		t.Error("agedir.yaml was not overwritten after answering 'y' (old content remains)")
+	}
+}
+
+func TestRunInit_AlreadyGitIgnoredFileNotAddedToRootGitignore(t *testing.T) {
+	dir := t.TempDir()
+
+	// skip if git is not available
+	if err := exec.Command("git", "init", dir).Run(); err != nil {
+		t.Skip("git not available")
+	}
+
+	// create subdirectory .gitignore that already ignores the file
+	subdir := filepath.Join(dir, "android", "app")
+	os.MkdirAll(subdir, 0o755)
+	os.WriteFile(filepath.Join(subdir, ".gitignore"), []byte("google-services.json\n"), 0o644)
+	os.WriteFile(filepath.Join(subdir, "google-services.json"), []byte("{}"), 0o644)
+
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	cmd, _, _ := newTestCmd()
+	opts := initOpts{configPath: cfgPath, root: dir}
+
+	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
+		t.Fatalf("runInit() error: %v", err)
+	}
+
+	gitignorePath := filepath.Join(dir, ".gitignore")
+	data, err := os.ReadFile(gitignorePath)
+	if err != nil {
+		// .gitignore not created at all — nothing was added, which is correct
+		return
+	}
+	if strings.Contains(string(data), "google-services.json") {
+		t.Error("already git-ignored file was added to root .gitignore")
 	}
 }
 
