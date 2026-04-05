@@ -131,6 +131,29 @@ func TestEncrypt_EmptyPublicKeys(t *testing.T) {
 	}
 }
 
+// --- ValidateRecipients tests ---
+
+func TestValidateRecipients_EmptySliceReturnsError(t *testing.T) {
+	err := crypto.ValidateRecipients([]string{})
+	if err == nil {
+		t.Fatal("expected error for empty recipients, got nil")
+	}
+}
+
+func TestValidateRecipients_ValidKeyReturnsNil(t *testing.T) {
+	pubkey, _ := generateTestKeyPair(t)
+	if err := crypto.ValidateRecipients([]string{pubkey}); err != nil {
+		t.Fatalf("expected no error for valid key, got: %v", err)
+	}
+}
+
+func TestValidateRecipients_InvalidKeyReturnsError(t *testing.T) {
+	err := crypto.ValidateRecipients([]string{"not-a-valid-age-key"})
+	if err == nil {
+		t.Fatal("expected error for invalid key, got nil")
+	}
+}
+
 // --- 3.2 identity resolution and decryption tests ---
 
 func TestDecrypt_WithIdentityFile(t *testing.T) {

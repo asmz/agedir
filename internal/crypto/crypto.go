@@ -40,8 +40,11 @@ func GenerateX25519Identity() (*age.X25519Identity, error) {
 }
 
 // ValidateRecipients validates all public keys upfront.
-// Returns an error immediately if any key has an invalid format.
+// Returns an error if the list is empty or any key has an invalid format.
 func ValidateRecipients(pubkeys []string) error {
+	if len(pubkeys) == 0 {
+		return errors.New("no recipients specified")
+	}
 	for _, pk := range pubkeys {
 		if _, err := age.ParseX25519Recipient(pk); err != nil {
 			return fmt.Errorf("invalid public key format %q: %w", pk, err)

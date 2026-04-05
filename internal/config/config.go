@@ -3,6 +3,7 @@ package config
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -14,7 +15,6 @@ import (
 // Sentinel errors.
 var (
 	ErrConfigNotFound = errors.New("agedir.yaml not found; run `agedir init` to create one")
-	ErrNoRecipients   = errors.New("recipients must have at least one public key")
 	ErrEmptyMapping   = errors.New("mapping must have at least one entry")
 	ErrConfigExists   = errors.New("agedir.yaml already exists; delete it manually to overwrite")
 )
@@ -88,9 +88,6 @@ func (l *loader) Load(path string) (*Config, error) {
 }
 
 func validate(cfg *Config) error {
-	if len(cfg.Recipients) == 0 {
-		return ErrNoRecipients
-	}
 	if len(cfg.Mapping) == 0 {
 		return ErrEmptyMapping
 	}
@@ -120,6 +117,17 @@ func (l *loader) Generate(cfg *Config, path string) error {
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to serialize config: %w", err)
+	}
+
+	// when recipients is empty, replace "recipients: []" with a placeholder
+	// so the generated template prompts the user to fill in their age public key
+	if len(cfg.Recipients) == 0 {
+		data = bytes.Replace(
+			data,
+			[]byte("recipients: []\n"),
+			[]byte("recipients:\n    - # age1... (replace with your age public key)\n"),
+			1,
+		)
 	}
 
 	if err := os.WriteFile(path, data, 0o600); err != nil {

@@ -183,6 +183,36 @@ func TestRunEncrypt_PassphraseMode(t *testing.T) {
 	}
 }
 
+func TestRunEncrypt_PassphraseModeWithEmptyRecipients(t *testing.T) {
+	dir := t.TempDir()
+
+	const passphrase = "test-passphrase-empty-recipients"
+	content := []byte("passphrase mode with empty recipients")
+
+	rawPath := filepath.Join(dir, "secret.txt")
+	os.WriteFile(rawPath, content, 0o600)
+
+	storageDir := filepath.Join(dir, ".agedir", "secrets")
+	os.MkdirAll(storageDir, 0o755)
+
+	// recipients is intentionally empty: passphrase mode does not require public keys
+	cfg := &config.Config{
+		Version:    "1",
+		Recipients: []string{},
+		StorageDir: storageDir,
+		Mapping:    []config.FileMapping{{Raw: rawPath, Enc: "secret.txt.age"}},
+	}
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	writeAgedir(t, cfgPath, cfg)
+
+	t.Setenv("AGEDIR_PASSPHRASE", passphrase)
+
+	cmd, _, _ := newTestCmd()
+	if err := runEncrypt(cmd, encryptOpts{configPath: cfgPath, passphraseMode: true}, config.New(), crypto.New(), fileops.New()); err != nil {
+		t.Fatalf("runEncrypt() with empty recipients in passphrase mode should succeed, got: %v", err)
+	}
+}
+
 func TestRunEncrypt_DryRunDoesNotWriteFiles(t *testing.T) {
 	dir := t.TempDir()
 	kp := generateTestKeyPair(t)
