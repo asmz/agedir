@@ -148,7 +148,7 @@ Use this after adding or removing team members from `recipients`.
 
 ```yaml
 version: "1"               # required
-recipients:                # required; one or more age public keys
+recipients:                # required for public key mode; omit or leave empty for passphrase mode (-p)
   - age1...
 storage_dir: .agedir/secrets  # optional; default: .agedir/secrets
 mapping:                   # required; one or more raw/enc pairs

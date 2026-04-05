@@ -106,7 +106,7 @@ func TestLoad_FileNotFound(t *testing.T) {
 	}
 }
 
-func TestLoad_NoRecipients(t *testing.T) {
+func TestLoad_EmptyRecipientsIsAllowed(t *testing.T) {
 	dir := tempDir(t)
 	yaml := `
 version: "1"
@@ -117,9 +117,8 @@ mapping:
 `
 	path := writeFile(t, dir, "agedir.yaml", yaml)
 	loader := config.New()
-	_, err := loader.Load(path)
-	if !errors.Is(err, config.ErrNoRecipients) {
-		t.Errorf("error = %v, want ErrNoRecipients", err)
+	if _, err := loader.Load(path); err != nil {
+		t.Errorf("expected no error for empty recipients (passphrase mode), got: %v", err)
 	}
 }
 
