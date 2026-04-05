@@ -142,12 +142,14 @@ agedir rekey [--config agedir.yaml]
 
 Use this after adding or removing team members from `recipients`.
 
+> **Note:** `rekey` reads the raw (decrypted) files to re-encrypt them. The raw files must be present on disk before running `rekey`. If raw files have been deleted, decrypt them first with `agedir decrypt`.
+
 ## Configuration
 
 `agedir.yaml` schema:
 
 ```yaml
-version: "1"               # required
+version: "1"               # reserved for future schema migrations; always set to "1"
 recipients:                # required for public key mode; omit or leave empty for passphrase mode (-p)
   - age1...
 storage_dir: .agedir/secrets  # optional; default: .agedir/secrets
@@ -171,6 +173,7 @@ mapping:                   # required; one or more raw/enc pairs
 - **Encrypted files** (`storage_dir`) are safe to commit.
 - Passphrases are never passed as command-line arguments (avoids exposure via `ps`).
 - Encrypted files are written atomically (temp file + rename) to prevent corruption on interruption.
+- **`AGEDIR_PASSPHRASE` environment variable**: Convenient for scripting but carries risk — environment variables may be visible in process listings or captured in CI/CD logs. Prefer `--identity` with a key file in automated environments.
 
 ## Default Scan Patterns
 
@@ -194,6 +197,26 @@ Directories are excluded from scanning at the **directory level**, not the file 
 > **Note:** Individual files that are git-ignored are still detected as long as their parent directory is not git-ignored. This is intentional — raw secret files are typically gitignored at the file level, and `agedir init` is designed to find and manage exactly those files.
 >
 > If you store secrets inside a git-ignored directory (e.g., a `secrets/` directory that is itself gitignored), those files will not be detected automatically. Add them to `agedir.yaml` manually.
+
+## Troubleshooting
+
+**`no identity specified; use --identity, -p, or set AGEDIR_IDENTITY`**
+No decryption identity was provided. Pass `-i ~/.age/key.txt`, use `-p` for passphrase mode, or set the `AGEDIR_IDENTITY` environment variable.
+
+**`no matching identity found (key mismatch)`**
+The private key does not match any of the recipients the file was encrypted for. Make sure you are using the correct key, or ask a team member to run `agedir rekey` after adding your public key to `recipients`.
+
+**`agedir.yaml not found`**
+Run `agedir init` to create an initial configuration, or use `--config` to point to the correct path.
+
+**`warning: raw file not found: ...`** (during encrypt/rekey)
+The file listed in `mapping[].raw` does not exist. Ensure the file is present before encrypting, or remove the entry from `agedir.yaml`.
+
+**`warning: encrypted file not found: ...`** (during decrypt)
+The encrypted file is missing from `storage_dir`. Run `agedir encrypt` to generate it, or pull the latest version from your repository.
+
+**Passphrase prompt appears multiple times**
+This should not happen in normal usage. If it does, ensure you are using `-p` and not mixing identity and passphrase flags.
 
 ## Cross-Platform Builds
 
