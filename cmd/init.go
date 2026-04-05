@@ -53,7 +53,7 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 	if _, err := os.Stat(configPath); err == nil {
 		fmt.Fprintf(cmd.OutOrStdout(), "agedir.yaml already exists. Overwrite? [y/N]: ")
 		var answer string
-		fmt.Fscan(cmd.InOrStdin(), &answer)
+		_, _ = fmt.Fscan(cmd.InOrStdin(), &answer)
 		if strings.ToLower(strings.TrimSpace(answer)) != "y" {
 			fmt.Fprintln(cmd.OutOrStdout(), "cancelled.")
 			return nil
