@@ -131,7 +131,7 @@ func TestIntegration_EncryptDecryptRoundtrip_MultiMapping(t *testing.T) {
 		destPath := filepath.Join(dir, e.name)
 		os.WriteFile(destPath, e.content, 0o600)
 		mappings = append(mappings, config.FileMapping{
-			Enc:  e.name + ".age",
+			Enc: e.name + ".age",
 			Raw: destPath,
 		})
 	}
