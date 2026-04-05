@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -100,6 +101,12 @@ func validate(cfg *Config) error {
 		if m.Raw == "" {
 			return fmt.Errorf("mapping[%d].raw is empty", i)
 		}
+		if hasPathTraversal(m.Raw) {
+			return fmt.Errorf("mapping[%d].raw contains path traversal: %q", i, m.Raw)
+		}
+		if hasPathTraversal(m.Enc) {
+			return fmt.Errorf("mapping[%d].enc contains path traversal: %q", i, m.Enc)
+		}
 		if seen[m.Raw] {
 			return fmt.Errorf("duplicate raw in mapping: %q", m.Raw)
 		}
@@ -107,6 +114,14 @@ func validate(cfg *Config) error {
 	}
 
 	return nil
+}
+
+// hasPathTraversal reports whether p contains a path traversal sequence ("..").
+// filepath.Clean is used to normalize away in-place traversals like "foo/../bar"
+// before checking, so only genuine escapes (e.g. "../../etc/passwd") are flagged.
+func hasPathTraversal(p string) bool {
+	cleaned := filepath.Clean(filepath.FromSlash(p))
+	return cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator))
 }
 
 func (l *loader) Generate(cfg *Config, path string) error {

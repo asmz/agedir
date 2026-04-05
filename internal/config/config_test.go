@@ -122,6 +122,56 @@ mapping:
 	}
 }
 
+func TestLoad_PathTraversalInRaw(t *testing.T) {
+	dir := tempDir(t)
+	yaml := `
+version: "1"
+recipients:
+  - age1abc123
+mapping:
+  - raw: "../../etc/passwd"
+    enc: "passwd.age"
+`
+	path := writeFile(t, dir, "agedir.yaml", yaml)
+	_, err := config.New().Load(path)
+	if err == nil {
+		t.Error("expected error for path traversal in raw, got nil")
+	}
+}
+
+func TestLoad_PathTraversalInEnc(t *testing.T) {
+	dir := tempDir(t)
+	yaml := `
+version: "1"
+recipients:
+  - age1abc123
+mapping:
+  - raw: "secret.txt"
+    enc: "../../outside.age"
+`
+	path := writeFile(t, dir, "agedir.yaml", yaml)
+	_, err := config.New().Load(path)
+	if err == nil {
+		t.Error("expected error for path traversal in enc, got nil")
+	}
+}
+
+func TestLoad_NormalSubdirPathIsAllowed(t *testing.T) {
+	dir := tempDir(t)
+	yaml := `
+version: "1"
+recipients:
+  - age1abc123
+mapping:
+  - raw: "android/app/google-services.json"
+    enc: "android/app/google-services.json.age"
+`
+	path := writeFile(t, dir, "agedir.yaml", yaml)
+	if _, err := config.New().Load(path); err != nil {
+		t.Errorf("expected no error for normal subdir path, got: %v", err)
+	}
+}
+
 func TestLoad_EmptyMapping(t *testing.T) {
 	dir := tempDir(t)
 	yaml := `
