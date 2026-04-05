@@ -15,6 +15,7 @@ var DefaultPatterns = []string{
 	"GoogleService-Info*.plist",
 	"*.pem",
 	"*.key",
+	"*.keystore",
 }
 
 // fallbackExcludeDirs is used when git is unavailable to skip well-known third-party package directories.
