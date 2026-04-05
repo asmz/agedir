@@ -33,7 +33,7 @@ cd agedir
 make build
 ```
 
-Requires Go 1.25.8 or later.
+Requires Go 1.26 or later.
 
 ## Prerequisites: Generating an age Key Pair
 

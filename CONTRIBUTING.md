@@ -9,7 +9,7 @@ Thank you for your interest in contributing to agedir!
 
 ## Development Setup
 
-**Prerequisites**: Go 1.25.8+, mise (optional but recommended)
+**Prerequisites**: Go 1.26+, mise (optional but recommended)
 
 ```sh
 git clone https://github.com/asmz/agedir.git
