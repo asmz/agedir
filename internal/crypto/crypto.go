@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 
 	"filippo.io/age"
 	"golang.org/x/term"
@@ -176,7 +177,18 @@ func resolveIdentities(opts IdentityOpts) ([]age.Identity, error) {
 }
 
 // loadIdentityFile reads an age private key file from the given path.
+// It warns to stderr if the file has permissions more permissive than 0o600.
 func loadIdentityFile(path string) ([]age.Identity, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot stat identity file %q: %w", path, err)
+	}
+	// Windows does not support POSIX permission bits; os.Stat always returns 0o666
+	// regardless of the actual ACL, so the check is meaningless and skipped.
+	if runtime.GOOS != "windows" && info.Mode().Perm()&0o177 != 0 {
+		fmt.Fprintf(os.Stderr, "warning: identity file %q has permissions %#o; recommend 0600\n", path, info.Mode().Perm())
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open identity file %q: %w", path, err)

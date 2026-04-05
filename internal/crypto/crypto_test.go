@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -272,6 +273,83 @@ func TestDecrypt_WithEnvIdentity(t *testing.T) {
 	}
 	if !bytes.Equal(dec.Bytes(), plaintext) {
 		t.Fatal("decrypted content mismatch")
+	}
+}
+
+// --- identity file permission check tests ---
+
+func TestLoadIdentityFile_PermissiveModeWarns(t *testing.T) {
+	// Windows does not expose POSIX permission bits via os.Stat, so the check is skipped there.
+	if runtime.GOOS == "windows" {
+		t.Skip("permission check is not supported on Windows")
+	}
+
+	svc := crypto.New()
+	_, privkey := generateTestKeyPair(t)
+
+	tmpFile := t.TempDir() + "/key.txt"
+	if err := os.WriteFile(tmpFile, []byte(privkey+"\n"), 0o644); err != nil {
+		t.Fatalf("failed to write temp key file: %v", err)
+	}
+
+	// capture stderr
+	origStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	os.Stderr = w
+
+	// trigger loadIdentityFile via Decrypt (it will fail to decrypt — that's OK)
+	var enc, dec bytes.Buffer
+	pubkey, _ := generateTestKeyPair(t)
+	svc.Encrypt(bytes.NewReader([]byte("test")), &enc, []string{pubkey})
+	svc.Decrypt(bytes.NewReader(enc.Bytes()), &dec, crypto.IdentityOpts{IdentityFile: tmpFile})
+
+	w.Close()
+	os.Stderr = origStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+
+	if !strings.Contains(buf.String(), "warning") {
+		t.Errorf("expected permission warning on stderr, got: %q", buf.String())
+	}
+}
+
+func TestLoadIdentityFile_StrictModeNoWarning(t *testing.T) {
+	// Windows does not expose POSIX permission bits via os.Stat, so the check is skipped there.
+	if runtime.GOOS == "windows" {
+		t.Skip("permission check is not supported on Windows")
+	}
+
+	svc := crypto.New()
+	pubkey, privkey := generateTestKeyPair(t)
+
+	tmpFile := t.TempDir() + "/key.txt"
+	if err := os.WriteFile(tmpFile, []byte(privkey+"\n"), 0o600); err != nil {
+		t.Fatalf("failed to write temp key file: %v", err)
+	}
+
+	origStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	os.Stderr = w
+
+	var enc, dec bytes.Buffer
+	svc.Encrypt(bytes.NewReader([]byte("test")), &enc, []string{pubkey})
+	svc.Decrypt(bytes.NewReader(enc.Bytes()), &dec, crypto.IdentityOpts{IdentityFile: tmpFile})
+
+	w.Close()
+	os.Stderr = origStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+
+	if strings.Contains(buf.String(), "warning") {
+		t.Errorf("unexpected permission warning on stderr: %q", buf.String())
 	}
 }
 
