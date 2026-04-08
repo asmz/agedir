@@ -3,7 +3,20 @@ set -e
 
 REPO="asmz/agedir"
 BINARY="agedir"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
+
+# Resolve install directory: honour env var, then try /usr/local/bin, fall back to ~/.local/bin
+if [ -n "${INSTALL_DIR}" ]; then
+  : # use as-is
+elif [ -w /usr/local/bin ]; then
+  INSTALL_DIR=/usr/local/bin
+else
+  INSTALL_DIR="${HOME}/.local/bin"
+  mkdir -p "${INSTALL_DIR}"
+  case ":${PATH}:" in
+    *":${INSTALL_DIR}:"*) ;;
+    *) echo "note: ${INSTALL_DIR} is not in your PATH; add it to use agedir globally" ;;
+  esac
+fi
 
 # OS detection
 OS="$(uname -s)"
