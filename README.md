@@ -15,17 +15,45 @@ agedir ships as a single statically-linked binary (no external `age` installatio
 
 ## Installation
 
-### Download binary
+### Homebrew (macOS / Linux)
 
-Download the latest binary for your platform from the [Releases](https://github.com/asmz/agedir/releases) page.
+```sh
+brew install asmz/tap/agedir
+```
 
-### Build from source
+### install.sh (Linux / macOS)
+
+```sh
+curl -sSL https://github.com/asmz/agedir/releases/latest/download/install.sh | sh
+```
+
+To pin a specific version (recommended for CI):
+
+```sh
+export AGEDIR_VERSION=v1.0.0
+curl -sSL https://github.com/asmz/agedir/releases/download/${AGEDIR_VERSION}/install.sh | sh
+```
+
+Example for GitHub Actions:
+
+```yaml
+- name: Install agedir
+  env:
+    AGEDIR_VERSION: v1.0.0
+  run: curl -sSL "https://github.com/asmz/agedir/releases/download/${AGEDIR_VERSION}/install.sh" | sh
+```
+
+### go install
 
 ```sh
 go install github.com/asmz/agedir@latest
 ```
 
-Or clone and build:
+### Download binary
+
+Download the latest binary for your platform from the [Releases](https://github.com/asmz/agedir/releases) page.
+
+### Build from source
 
 ```sh
 git clone https://github.com/asmz/agedir.git
