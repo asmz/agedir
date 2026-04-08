@@ -46,7 +46,5 @@ brews:
       system "#{bin}/agedir", "--version"
 
 release:
-  generate_release_notes: true
-
-extra_files:
-  - glob: ./install.sh
+  extra_files:
+    - glob: ./install.sh
