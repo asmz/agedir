@@ -209,7 +209,8 @@ mapping:                   # required; one or more raw/enc pairs
 
 | Pattern | Example |
 |---------|---------|
-| `*.jks` | Android Keystore |
+| `*.jks`, `*.keystore` | Android Keystore |
+| `*.p8` | PKCS#8 certificate |
 | `*.p12` | PKCS#12 certificate |
 | `google-services*.json` | Firebase Android config |
 | `GoogleService-Info*.plist` | Firebase iOS config |
