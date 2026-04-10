@@ -10,12 +10,13 @@ import (
 // DefaultPatterns are the constant file name patterns used to detect sensitive files.
 var DefaultPatterns = []string{
 	"*.jks",
+	"*.keystore",
 	"*.p12",
+	"*.p8",
 	"google-services*.json",
 	"GoogleService-Info*.plist",
 	"*.pem",
 	"*.key",
-	"*.keystore",
 }
 
 // fallbackExcludeDirs is used when git is unavailable to skip well-known third-party package directories.
