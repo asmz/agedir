@@ -200,6 +200,33 @@ func TestRunInit_SameFileNameInDifferentDirsGetDistinctEncPaths(t *testing.T) {
 	}
 }
 
+func TestRunInit_SkipScanGeneratesTemplateOnlyConfig(t *testing.T) {
+	dir := t.TempDir()
+
+	os.WriteFile(filepath.Join(dir, "service.key"), []byte("key"), 0o644)
+
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	cmd, _, _ := newTestCmd()
+	opts := initOpts{configPath: cfgPath, root: dir, skipScan: true}
+
+	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
+		t.Fatalf("runInit() returned unexpected error: %v", err)
+	}
+
+	content, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("cannot read agedir.yaml: %v", err)
+	}
+
+	cfgContent := string(content)
+	if strings.Contains(cfgContent, "service.key") {
+		t.Errorf("skip-scan config should not include scanned file entries: %q", cfgContent)
+	}
+	if !strings.Contains(cfgContent, "# age1... (replace with your age public key)") {
+		t.Errorf("expected template placeholder in config: %q", cfgContent)
+	}
+}
+
 func TestRunInit_NoSensitiveFilesGeneratesEmptyMapping(t *testing.T) {
 	dir := t.TempDir()
 

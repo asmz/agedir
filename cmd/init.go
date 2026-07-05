@@ -13,24 +13,27 @@ import (
 )
 
 var initConfig string
+var initSkipScan bool
 
 var initCmd = &cobra.Command{
 	Use:          "init",
-	Short:        "Scan the project and generate an initial agedir.yaml",
+	Short:        "Generate an initial agedir.yaml",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		opts := initOpts{configPath: initConfig}
+		opts := initOpts{configPath: initConfig, skipScan: initSkipScan}
 		return runInit(cmd, opts, config.New(), scanner.New())
 	},
 }
 
 func init() {
 	initCmd.Flags().StringVar(&initConfig, "config", "", "path to agedir.yaml (default: current directory)")
+	initCmd.Flags().BoolVar(&initSkipScan, "skip-scan", false, "skip scanning for sensitive files and generate a template-only agedir.yaml")
 }
 
 type initOpts struct {
 	configPath string
 	root       string // project root; defaults to current directory if empty
+	skipScan   bool
 }
 
 // runInit implements the business logic for the init command.
@@ -64,23 +67,34 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 		}
 	}
 
-	// scan the project for sensitive file candidates
-	result, err := sc.Scan(root)
-	if err != nil {
-		return fmt.Errorf("failed to scan files: %w", err)
-	}
+	var result scanner.ScanResult
+	var cfg *config.Config
+	if opts.skipScan {
+		cfg = &config.Config{
+			Version:    "1",
+			Recipients: []string{},
+			StorageDir: ".agedir/secrets",
+		}
+	} else {
+		// scan the project for sensitive file candidates
+		var err error
+		result, err = sc.Scan(root)
+		if err != nil {
+			return fmt.Errorf("failed to scan files: %w", err)
+		}
 
-	// build a config template
-	cfg := &config.Config{
-		Version:    "1",
-		Recipients: []string{},
-		StorageDir: ".agedir/secrets",
-	}
-	for _, match := range result.Matches {
-		cfg.Mapping = append(cfg.Mapping, config.FileMapping{
-			Enc: filepath.ToSlash(match) + ".age",
-			Raw: match,
-		})
+		// build a config template
+		cfg = &config.Config{
+			Version:    "1",
+			Recipients: []string{},
+			StorageDir: ".agedir/secrets",
+		}
+		for _, match := range result.Matches {
+			cfg.Mapping = append(cfg.Mapping, config.FileMapping{
+				Enc: filepath.ToSlash(match) + ".age",
+				Raw: match,
+			})
+		}
 	}
 
 	// generate agedir.yaml
@@ -103,8 +117,12 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "generated agedir.yaml: %s\n", configPath)
-	if len(result.Matches) > 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "%d sensitive file(s) detected\n", len(result.Matches))
+	if !opts.skipScan {
+		if len(result.Matches) > 0 {
+			fmt.Fprintf(cmd.OutOrStdout(), "%d sensitive file(s) detected\n", len(result.Matches))
+		}
+	} else {
+		fmt.Fprintln(cmd.OutOrStdout(), "skipped scanning; generated template-only agedir.yaml")
 	}
 
 	return nil
