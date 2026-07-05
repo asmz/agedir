@@ -90,6 +90,12 @@ agedir init
 
 Scans the current directory for common secret file patterns and generates an `agedir.yaml` template. Detected file paths are automatically appended to `.gitignore`.
 
+If you want to skip the scan and generate a template-only config instead, run:
+
+```sh
+agedir init --skip-scan
+```
+
 ### 2. Edit `agedir.yaml`
 
 Add your team's age public keys to `recipients`:
@@ -97,14 +103,14 @@ Add your team's age public keys to `recipients`:
 ```yaml
 version: "1"
 recipients:
-  - age1xxxx...xxxx  # alice
-  - age1yyyy...yyyy  # bob
+  - age1xxxx...xxxx # alice
+  - age1yyyy...yyyy # bob
 storage_dir: .agedir/secrets
 mapping:
-  - raw: android/app/google-services.json
-    enc: google-services.json.age
+  - raw: android/app/google-services.json # specify the raw file to be encrypted
+    enc: android/app/google-services.json.age # specify the output file after encryption
   - raw: ios/Runner/GoogleService-Info.plist
-    enc: GoogleService-Info.plist.age
+    enc: ios/Runner/GoogleService-Info.plist.age
 ```
 
 ### 3. Encrypt
@@ -130,10 +136,10 @@ Decrypts each encrypted file and places it at the configured `raw` path. Run thi
 Scan the project and generate an initial `agedir.yaml`.
 
 ```sh
-agedir init [--config agedir.yaml]
+agedir init [--config agedir.yaml] [--skip-scan]
 ```
 
-Prompts for confirmation before overwriting an existing config.
+Prompts for confirmation before overwriting an existing config. Use `--skip-scan` to generate a template-only `agedir.yaml` without scanning the project for matching files.
 
 ### `agedir encrypt`
 
@@ -152,13 +158,13 @@ agedir decrypt [--identity|-i <keyfile>] [--passphrase|-p] \
                [--verify] [--dry-run] [--config agedir.yaml]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `-i, --identity` | Path to age private key file |
+| Flag               | Description                                                                      |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `-i, --identity`   | Path to age private key file                                                     |
 | `-p, --passphrase` | Decrypt using passphrase (reads from `AGEDIR_PASSPHRASE` env or terminal prompt) |
-| `--verify` | Skip writing if the existing file's SHA-256 hash matches |
-| `--dry-run` | Print files to be processed without writing anything |
-| `--config` | Path to `agedir.yaml` (default: current directory) |
+| `--verify`         | Skip writing if the existing file's SHA-256 hash matches                         |
+| `--dry-run`        | Print files to be processed without writing anything                             |
+| `--config`         | Path to `agedir.yaml` (default: current directory)                               |
 
 ### `agedir rekey`
 
@@ -177,13 +183,13 @@ Use this after adding or removing team members from `recipients`.
 `agedir.yaml` schema:
 
 ```yaml
-version: "1"               # reserved for future schema migrations; always set to "1"
-recipients:                # required for public key mode; omit or leave empty for passphrase mode (-p)
+version: "1" # reserved for future schema migrations; always set to "1"
+recipients: # required for public key mode; omit or leave empty for passphrase mode (-p)
   - age1...
-storage_dir: .agedir/secrets  # optional; default: .agedir/secrets
-mapping:                   # required; one or more raw/enc pairs
-  - raw: path/to/secret.txt  # path relative to project root (original file)
-    enc: secret.txt.age      # path relative to storage_dir (encrypted file)
+storage_dir: .agedir/secrets # optional; default: .agedir/secrets
+mapping: # required; one or more raw/enc pairs
+  - raw: path/to/secret.txt # path relative to project root (original file)
+    enc: secret.txt.age # path relative to storage_dir (encrypted file)
 ```
 
 ## Identity Resolution
@@ -207,14 +213,14 @@ mapping:                   # required; one or more raw/enc pairs
 
 `agedir init` detects the following file patterns:
 
-| Pattern | Example |
-|---------|---------|
-| `*.jks`, `*.keystore` | Android Keystore |
-| `*.p8` | PKCS#8 certificate |
-| `*.p12` | PKCS#12 certificate |
-| `google-services*.json` | Firebase Android config |
-| `GoogleService-Info*.plist` | Firebase iOS config |
-| `*.pem`, `*.key` | TLS certificates / private keys |
+| Pattern                     | Example                         |
+| --------------------------- | ------------------------------- |
+| `*.jks`, `*.keystore`       | Android Keystore                |
+| `*.p8`                      | PKCS#8 certificate              |
+| `*.p12`                     | PKCS#12 certificate             |
+| `google-services*.json`     | Firebase Android config         |
+| `GoogleService-Info*.plist` | Firebase iOS config             |
+| `*.pem`, `*.key`            | TLS certificates / private keys |
 
 ### Scan Exclusion Rules
 
