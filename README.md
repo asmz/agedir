@@ -107,8 +107,8 @@ recipients:
   - age1yyyy...yyyy # bob
 storage_dir: .agedir/secrets
 mapping:
-  - raw: android/app/google-services.json # specify the raw file to be encrypted
-    enc: android/app/google-services.json.age # specify the output file after encryption
+  - raw: android/app/google-services.json
+    enc: android/app/google-services.json.age
   - raw: ios/Runner/GoogleService-Info.plist
     enc: ios/Runner/GoogleService-Info.plist.age
 ```
@@ -189,7 +189,7 @@ recipients: # required for public key mode; omit or leave empty for passphrase m
 storage_dir: .agedir/secrets # optional; default: .agedir/secrets
 mapping: # required; one or more raw/enc pairs
   - raw: path/to/secret.txt # path relative to project root (original file)
-    enc: secret.txt.age # path relative to storage_dir (encrypted file)
+    enc: path/to/secret.txt.age # path relative to storage_dir (encrypted file)
 ```
 
 ## Identity Resolution
