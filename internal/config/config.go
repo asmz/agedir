@@ -137,10 +137,32 @@ func (l *loader) Generate(cfg *Config, path string) error {
 	// when recipients is empty, replace "recipients: []" with a placeholder
 	// so the generated template prompts the user to fill in their age public key
 	if len(cfg.Recipients) == 0 {
+		recipientsTemplate := strings.Join([]string{
+			"recipients:",
+			"    - # age1... (replace with your age public key)",
+		}, "\n") + "\n"
+
 		data = bytes.Replace(
 			data,
 			[]byte("recipients: []\n"),
-			[]byte("recipients:\n    - # age1... (replace with your age public key)\n"),
+			[]byte(recipientsTemplate),
+			1,
+		)
+	}
+
+	// when mapping entries is empty, replace "mapping: []" with a placeholder
+	// so the generated template prompts the user to fill in their raw and encrypted file paths
+	if len(cfg.Mapping) == 0 {
+		mappingTemplate := strings.Join([]string{
+			"mapping:",
+			"    - raw: # path/to/raw_file (specify the raw file to be encrypted)",
+			"      enc: # path/to/enc_file (specify the output file after encryption)",
+		}, "\n") + "\n"
+
+		data = bytes.Replace(
+			data,
+			[]byte("mapping: []\n"),
+			[]byte(mappingTemplate),
 			1,
 		)
 	}
