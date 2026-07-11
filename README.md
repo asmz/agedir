@@ -88,9 +88,9 @@ For more details, see the [age documentation](https://github.com/FiloSottile/age
 agedir init
 ```
 
-Scans the current directory for common secret file patterns and generates an `agedir.yaml` template. Detected file paths are automatically appended to `.gitignore`.
+Scans the current directory for common secret file patterns and generates an `agedir.yaml` template. When you run `agedir init`, it asks whether to scan the project for sensitive files first; answering `y` proceeds with the scan, while `n` or pressing Enter generates a template-only config without scanning. Detected file paths are automatically appended to `.gitignore`.
 
-If you want to skip the scan and generate a template-only config instead, run:
+If you want to skip the scan and generate a template-only config without prompting, run:
 
 ```sh
 agedir init --skip-scan
@@ -139,7 +139,7 @@ Scan the project and generate an initial `agedir.yaml`.
 agedir init [--config agedir.yaml] [--skip-scan]
 ```
 
-Prompts for confirmation before overwriting an existing config. Use `--skip-scan` to generate a template-only `agedir.yaml` without scanning the project for matching files.
+Prompts for confirmation before overwriting an existing config. When no flag is passed, it asks whether to scan the project for sensitive files first. Use `--skip-scan` to suppress that prompt and generate a template-only `agedir.yaml` without scanning the project for matching files.
 
 ### `agedir encrypt`
 

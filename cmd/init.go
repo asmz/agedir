@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,10 +56,11 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 
 	// prompt for confirmation if agedir.yaml already exists
 	if _, err := os.Stat(configPath); err == nil {
-		fmt.Fprintf(cmd.OutOrStdout(), "agedir.yaml already exists. Overwrite? [y/N]: ")
-		var answer string
-		_, _ = fmt.Fscan(cmd.InOrStdin(), &answer)
-		if strings.ToLower(strings.TrimSpace(answer)) != "y" {
+		overwriteConfirmed, err := confirmYesNo(cmd, "agedir.yaml already exists. Overwrite? [y/N]: ")
+		if err != nil {
+			return err
+		}
+		if !overwriteConfirmed {
 			fmt.Fprintln(cmd.OutOrStdout(), "cancelled.")
 			return nil
 		}
@@ -76,24 +79,35 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 			StorageDir: ".agedir/secrets",
 		}
 	} else {
-		// scan the project for sensitive file candidates
-		var err error
-		result, err = sc.Scan(root)
+		scanConfirmed, err := confirmScan(cmd)
 		if err != nil {
-			return fmt.Errorf("failed to scan files: %w", err)
+			return err
 		}
+		if !scanConfirmed {
+			cfg = &config.Config{
+				Version:    "1",
+				Recipients: []string{},
+				StorageDir: ".agedir/secrets",
+			}
+		} else {
+			// scan the project for sensitive file candidates
+			result, err = sc.Scan(root)
+			if err != nil {
+				return fmt.Errorf("failed to scan files: %w", err)
+			}
 
-		// build a config template
-		cfg = &config.Config{
-			Version:    "1",
-			Recipients: []string{},
-			StorageDir: ".agedir/secrets",
-		}
-		for _, match := range result.Matches {
-			cfg.Mapping = append(cfg.Mapping, config.FileMapping{
-				Enc: filepath.ToSlash(match) + ".age",
-				Raw: match,
-			})
+			// build a config template
+			cfg = &config.Config{
+				Version:    "1",
+				Recipients: []string{},
+				StorageDir: ".agedir/secrets",
+			}
+			for _, match := range result.Matches {
+				cfg.Mapping = append(cfg.Mapping, config.FileMapping{
+					Enc: filepath.ToSlash(match) + ".age",
+					Raw: match,
+				})
+			}
 		}
 	}
 
@@ -117,15 +131,45 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 	}
 
 	fmt.Fprintf(cmd.OutOrStdout(), "generated agedir.yaml: %s\n", configPath)
-	if !opts.skipScan {
-		if len(result.Matches) > 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "%d sensitive file(s) detected\n", len(result.Matches))
-		}
-	} else {
+	if opts.skipScan {
 		fmt.Fprintln(cmd.OutOrStdout(), "skipped scanning; generated template-only agedir.yaml")
+	} else if len(result.Matches) > 0 {
+		fmt.Fprintf(cmd.OutOrStdout(), "%d sensitive file(s) detected\n", len(result.Matches))
 	}
 
 	return nil
+}
+
+func confirmScan(cmd *cobra.Command) (bool, error) {
+	return confirmYesNo(cmd, "Scan the project for sensitive files? [y/N]: ")
+}
+
+func confirmYesNo(cmd *cobra.Command, prompt string) (bool, error) {
+	fmt.Fprint(cmd.OutOrStdout(), prompt)
+	answer, err := readLine(cmd.InOrStdin())
+	if err != nil {
+		return false, fmt.Errorf("failed to read confirmation: %w", err)
+	}
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	if answer == "" {
+		return false, nil
+	}
+	if answer == "n" || answer == "no" {
+		return false, nil
+	}
+	if answer == "y" || answer == "yes" {
+		return true, nil
+	}
+	return false, fmt.Errorf("invalid response %q; expected y or n", answer)
+}
+
+func readLine(r io.Reader) (string, error) {
+	reader := bufio.NewReader(r)
+	line, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+	return strings.TrimRight(line, "\r\n"), nil
 }
 
 // isGitIgnored reports whether path (relative to root) is already covered by git's ignore rules.
