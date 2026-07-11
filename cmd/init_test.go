@@ -1,15 +1,29 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/asmz/agedir/internal/config"
 	"github.com/asmz/agedir/internal/scanner"
 )
+
+func TestStartSpinner_WritesProgressToWriter(t *testing.T) {
+	var buf bytes.Buffer
+	stop := startSpinner(&buf, "Scanning project", true)
+	time.Sleep(20 * time.Millisecond)
+	stop()
+
+	got := buf.String()
+	if !strings.Contains(got, "Scanning project") {
+		t.Fatalf("expected spinner output to mention scan progress, got %q", got)
+	}
+}
 
 func TestRunInit_GeneratesConfigFile(t *testing.T) {
 	dir := t.TempDir()

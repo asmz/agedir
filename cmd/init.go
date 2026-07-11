@@ -8,10 +8,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/asmz/agedir/internal/config"
 	"github.com/asmz/agedir/internal/scanner"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var initConfig string
@@ -91,7 +94,14 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 			}
 		} else {
 			// scan the project for sensitive file candidates
+			var stopSpinner func()
+			if isInteractiveTerminal(cmd.OutOrStdout()) {
+				stopSpinner = startSpinner(cmd.OutOrStdout(), "Scanning project", true)
+			}
 			result, err = sc.Scan(root)
+			if stopSpinner != nil {
+				stopSpinner()
+			}
 			if err != nil {
 				return fmt.Errorf("failed to scan files: %w", err)
 			}
@@ -142,6 +152,48 @@ func runInit(cmd *cobra.Command, opts initOpts, cfgLoader config.ConfigLoader, s
 
 func confirmScan(cmd *cobra.Command) (bool, error) {
 	return confirmYesNo(cmd, "Scan the project for sensitive files? [y/N]: ")
+}
+
+func isInteractiveTerminal(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(int(f.Fd()))
+}
+
+func startSpinner(w io.Writer, prefix string, enabled bool) func() {
+	if !enabled {
+		return func() {}
+	}
+	if _, ok := w.(*os.File); ok && !isInteractiveTerminal(w) {
+		return func() {}
+	}
+
+	frames := []string{"|", "/", "-", "\\"}
+	var once sync.Once
+	done := make(chan struct{})
+
+	go func() {
+		idx := 0
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				fmt.Fprintf(w, "\r%s %s", prefix, frames[idx])
+				idx = (idx + 1) % len(frames)
+				time.Sleep(80 * time.Millisecond)
+			}
+		}
+	}()
+
+	return func() {
+		once.Do(func() {
+			close(done)
+			fmt.Fprintf(w, "\r%s done   \n", prefix)
+		})
+	}
 }
 
 func confirmYesNo(cmd *cobra.Command, prompt string) (bool, error) {
