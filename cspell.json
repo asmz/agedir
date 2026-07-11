@@ -1,0 +1,33 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "allowCompoundWords": true,
+  "words": [
+    "agedir",
+    "ageencryption",
+    "asmz",
+    "cobra",
+    "gitignore",
+    "goarch",
+    "gofmt",
+    "golangci",
+    "google-services",
+    "GoogleService",
+    "goreleaser",
+    "hpke",
+    "jks",
+    "keygen",
+    "keystore",
+    "kiro",
+    "ldflags",
+    "mousetrap",
+    "p12",
+    "p8",
+    "plist",
+    "privkey",
+    "pubkey",
+    "rekey",
+    "spf13",
+    "x25519"
+  ]
+}
