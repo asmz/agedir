@@ -308,6 +308,7 @@ func TestIntegration_Init_GitignoreNoDuplicates(t *testing.T) {
 
 	// first init
 	cmd1, _, _ := newTestCmd()
+	cmd1.SetIn(strings.NewReader("y\n"))
 	if err := runInit(cmd1, initOpts{configPath: cfgPath, root: dir}, config.New(), scanner.New()); err != nil {
 		t.Fatalf("first runInit() error: %v", err)
 	}
@@ -322,9 +323,9 @@ func TestIntegration_Init_GitignoreNoDuplicates(t *testing.T) {
 		t.Fatal("service.key not found in .gitignore after first init")
 	}
 
-	// second init (answer "y" to overwrite prompt)
+	// second init (answer "y" to overwrite prompt, then "y" to scan)
 	cmd2, _, _ := newTestCmd()
-	cmd2.SetIn(strings.NewReader("y\n"))
+	cmd2.SetIn(strings.NewReader("y\ny\n"))
 	if err := runInit(cmd2, initOpts{configPath: cfgPath, root: dir}, config.New(), scanner.New()); err != nil {
 		t.Fatalf("second runInit() error: %v", err)
 	}

@@ -19,6 +19,7 @@ func TestRunInit_GeneratesConfigFile(t *testing.T) {
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	cmd, out, _ := newTestCmd()
+	cmd.SetIn(strings.NewReader("y\n"))
 	opts := initOpts{configPath: cfgPath, root: dir}
 
 	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
@@ -43,6 +44,7 @@ func TestRunInit_ScannedFilesAppearInMapping(t *testing.T) {
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	cmd, _, _ := newTestCmd()
+	cmd.SetIn(strings.NewReader("y\n"))
 	opts := initOpts{configPath: cfgPath, root: dir}
 
 	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
@@ -70,6 +72,7 @@ func TestRunInit_UpdatesGitignore(t *testing.T) {
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	cmd, _, _ := newTestCmd()
+	cmd.SetIn(strings.NewReader("y\n"))
 	opts := initOpts{configPath: cfgPath, root: dir}
 
 	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
@@ -181,6 +184,7 @@ func TestRunInit_SameFileNameInDifferentDirsGetDistinctEncPaths(t *testing.T) {
 
 	cfgPath := filepath.Join(dir, "agedir.yaml")
 	cmd, _, _ := newTestCmd()
+	cmd.SetIn(strings.NewReader("y\n"))
 	if err := runInit(cmd, initOpts{configPath: cfgPath, root: dir}, config.New(), scanner.New()); err != nil {
 		t.Fatalf("runInit() returned unexpected error: %v", err)
 	}
@@ -197,6 +201,50 @@ func TestRunInit_SameFileNameInDifferentDirsGetDistinctEncPaths(t *testing.T) {
 	}
 	if !strings.Contains(cfgStr, "ios/Runner/google-services.json.age") {
 		t.Errorf("expected enc path ios/Runner/google-services.json.age not found in config:\n%s", cfgStr)
+	}
+}
+
+func TestRunInit_PromptedScanYesGeneratesScannedConfig(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "service.key"), []byte("key"), 0o644)
+
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	cmd, _, _ := newTestCmd()
+	cmd.SetIn(strings.NewReader("y\n"))
+	opts := initOpts{configPath: cfgPath, root: dir}
+
+	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
+		t.Fatalf("runInit() returned unexpected error: %v", err)
+	}
+
+	content, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("cannot read agedir.yaml: %v", err)
+	}
+	if !strings.Contains(string(content), "service.key") {
+		t.Fatalf("expected scanned mapping entry in config: %q", string(content))
+	}
+}
+
+func TestRunInit_PromptedScanNoGeneratesTemplateOnlyConfig(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "service.key"), []byte("key"), 0o644)
+
+	cfgPath := filepath.Join(dir, "agedir.yaml")
+	cmd, _, _ := newTestCmd()
+	cmd.SetIn(strings.NewReader("n\n"))
+	opts := initOpts{configPath: cfgPath, root: dir}
+
+	if err := runInit(cmd, opts, config.New(), scanner.New()); err != nil {
+		t.Fatalf("runInit() returned unexpected error: %v", err)
+	}
+
+	content, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatalf("cannot read agedir.yaml: %v", err)
+	}
+	if strings.Contains(string(content), "service.key") {
+		t.Fatalf("expected no scanned mapping entry when declining scan: %q", string(content))
 	}
 }
 
